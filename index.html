@@ -199,6 +199,14 @@
             <div class="game-title">Bomb Defusal Game!</div>
             <div class="game-instructions">Lass die bomben nicht wie auf der wiesn, sicher hoch gehen!</div>
             <div class="score-display">Score: <span id="score">0</span> | Time: <span id="time">30</span>s</div>
+            <div style="margin-bottom:10px;">
+                <label for="difficultySelect" style="color:#e91e63; font-weight:600; margin-right:8px;">Difficulty:</label>
+                <select id="difficultySelect">
+                    <option value="normal">Normal</option>
+                    <option value="easy">Easy</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
             <div class="game-area" id="gameArea"></div>
             <button class="game-button" id="startButton">Start Game</button>
             <button class="game-button" id="resetButton">Reset Game</button>
@@ -221,6 +229,28 @@
         let gameActive = false;
         let gameTimer;
         let bombInterval;
+
+        // Difficulty presets (easy, normal, hard)
+        const difficultySettings = {
+            easy: {
+                spawnInterval: 700,     // spawn every 700ms
+                timeLimit: 45,          // more time
+                speedMultiplier: 0.9,   // bombs fall slower
+                size: 60               // bomb size (px)
+            },
+            normal: {
+                spawnInterval: 400,
+                timeLimit: 30,
+                speedMultiplier: 1,
+                size: 50
+            },
+            hard: {
+                spawnInterval: 250,
+                timeLimit: 20,
+                speedMultiplier: 1.5,
+                size: 36
+            }
+        };
         
         // DOM elements
         const messageEl = document.getElementById('message');
@@ -266,12 +296,22 @@
             
             // Bomb appearance - using emoji
             bomb.innerHTML = '💣';
+
+            // Adjust size from current difficulty settings
+            const curDiff = document.getElementById('difficultySelect')?.value || 'normal';
+            const size = (difficultySettings[curDiff] && difficultySettings[curDiff].size) || 50;
+            bomb.style.width = size + 'px';
+            bomb.style.height = (size * 1.2) + 'px';
+            bomb.style.fontSize = Math.max(18, Math.floor(size * 0.6)) + 'px';
             
             // Add to game area
             gameArea.appendChild(bomb);
             
             // Animate bomb falling
-            const fallSpeed = 1 + Math.random() * 2;
+            // apply a speed multiplier based on difficulty
+            const curDiff = document.getElementById('difficultySelect')?.value || 'normal';
+            const multiplier = (difficultySettings[curDiff] && difficultySettings[curDiff].speedMultiplier) || 1;
+            const fallSpeed = (1 + Math.random() * 2) * multiplier;
             let position = -70;
             
             const fallInterval = setInterval(() => {
@@ -418,8 +458,10 @@
                 }
             }, 1000);
             
-            // Create bombs at intervals
-            bombInterval = setInterval(createBomb, 800);
+            // Create bombs at intervals based on difficulty
+            const curDiff = document.getElementById('difficultySelect')?.value || 'normal';
+            const spawnInterval = (difficultySettings[curDiff] && difficultySettings[curDiff].spawnInterval) || 400;
+            bombInterval = setInterval(createBomb, spawnInterval);
             
             // Change button text
             startButton.textContent = 'Game Running...';
@@ -458,7 +500,9 @@
             clearInterval(bombInterval);
             
             score = 0;
-            timeLeft = 30;
+            // time left comes from difficulty preset so hard/easy change gameplay
+            const curDiff = document.getElementById('difficultySelect')?.value || 'normal';
+            timeLeft = (difficultySettings[curDiff] && difficultySettings[curDiff].timeLimit) || 30;
             scoreEl.textContent = score;
             timeEl.textContent = timeLeft;
             
