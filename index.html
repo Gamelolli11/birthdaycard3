@@ -309,7 +309,6 @@
             
             // Animate bomb falling
             // apply a speed multiplier based on difficulty
-            const curDiff = document.getElementById('difficultySelect')?.value || 'normal';
             const multiplier = (difficultySettings[curDiff] && difficultySettings[curDiff].speedMultiplier) || 1;
             const fallSpeed = (1 + Math.random() * 2) * multiplier;
             let position = -70;
