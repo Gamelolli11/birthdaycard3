@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            padding: 20px;
+        }
+        
+        .birthday-card {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            border: 5px solid #e91e63;
+        }
+        
+        .card-header {
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #e91e63;
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px #ffc8dd;
+        }
+        
+        .birthday-message {
+            font-size: 1.3em;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 25px;
+            padding: 0 10px;
+        }
+        
+        .game-section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 25px 0;
+            border: 2px dashed #e91e63;
+        }
+        
+        .game-title {
+            color: #e91e63;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        
+        .game-instructions {
+            font-size: 1em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .game-area {
+            height: 200px;
+            background: #1a1a2e;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #ffc8dd;
+            margin-bottom: 15px;
+        }
+        
+        .bomb {
+            position: absolute;
+            width: 50px;
+            height: 60px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            z-index: 5;
+            text-align: center;
+            font-size: 30px;
+        }
+        
+        .bomb:hover {
+            transform: scale(1.1);
+        }
+        
+        .score-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #e91e63;
+            margin-bottom: 10px;
+        }
+        
+        .game-button {
+            background: #e91e63;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+            margin: 5px;
+        }
+        
+        .game-button:hover {
+            background: #c2185b;
+            transform: scale(1.05);
+        }
+        
+        .from {
+            font-style: italic;
+            color: #333;
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            opacity: 0.7;
+            animation: confetti-fall 5s linear infinite;
+        }
+        
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100px) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(360deg); }
+        }
+        
+        /* Bomb explosion animations */
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        
+        @keyframes shockwave {
+            0% { transform: scale(0); opacity: 0.7; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        @keyframes particle-fly {
+            0% { 
+                transform: translate(0, 0) scale(1); 
+                opacity: 1; 
+            }
+            100% { 
+                transform: translate(
+                    var(--tx, 0),
+                    var(--ty, 0)
+                ) scale(0); 
+                opacity: 0; 
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .birthday-card {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2.2em;
+            }
+            
+            .birthday-message {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="birthday-card">
+        <div class="card-header">
+            <h1>Happy Birthday!</h1>
+            <div class="birthday-message" id="message">
+                Ich wünsche dir einen schönen Geburtstag, lass nicht zu sehr die Bombe platzen!
+            </div>
+        </div>
+        
+        <div class="game-section">
+            <div class="game-title">Bomb Defusal Game!</div>
+            <div class="game-instructions">Lass die bomben nicht wie auf der wiesn, sicher hoch gehen!</div>
+            <div class="score-display">Score: <span id="score">0</span> | Time: <span id="time">30</span>s</div>
+            <div class="game-area" id="gameArea"></div>
+            <button class="game-button" id="startButton">Start Game</button>
+            <button class="game-button" id="resetButton">Reset Game</button>
+        </div>
+        
+        <div class="from" id="from">
+            From your friend
+        </div>
+    </div>
+
+    <script>
+        // Customizable variables
+        const friendName = "Stella";
+        const yourName = "Leon";
+        const customMessage = "Ich wünsche dir einen guten Geburtstag";
+        
+        // Game variables
+        let score = 0;
+        let timeLeft = 30;
+        let gameActive = false;
+        let gameTimer;
+        let bombInterval;
+        
+        // DOM elements
+        const messageEl = document.getElementById('message');
+        const fromEl = document.getElementById('from');
+        const gameArea = document.getElementById('gameArea');
+        const scoreEl = document.getElementById('score');
+        const timeEl = document.getElementById('time');
+        const startButton = document.getElementById('startButton');
+        const resetButton = document.getElementById('resetButton');
+        
+        // Update the card content
+        messageEl.textContent = `Liebe ${friendName}, ${customMessage}`;
+        fromEl.textContent = `Beste Grüße, ${yourName}`;
+        
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#e91e63', '#2196f3', '#4caf50', '#ffeb3b', '#9c27b0', '#ff9800'];
+            for (let i = 0; i < 30; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 5 + 's';
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
+        }
+        
+        // Create a bomb
+        function createBomb() {
+            if (!gameActive) return;
+            
+            const bomb = document.createElement('div');
+            bomb.className = 'bomb';
+            
+            // Random position
+            const leftPos = Math.random() * (gameArea.offsetWidth - 50);
+            bomb.style.left = leftPos + 'px';
+            bomb.style.bottom = '-70px';
+            
+            // Bomb appearance - using emoji
+            bomb.innerHTML = '💣';
+            
+            // Add to game area
+            gameArea.appendChild(bomb);
+            
+            // Animate bomb falling
+            const fallSpeed = 1 + Math.random() * 2;
+            let position = -70;
+            
+            const fallInterval = setInterval(() => {
+                if (!gameActive) {
+                    clearInterval(fallInterval);
+                    bomb.remove();
+                    return;
+                }
+                
+                position += fallSpeed;
+                bomb.style.bottom = position + 'px';
+                
+                // Remove bomb if it falls below the game area
+                if (position > gameArea.offsetHeight) {
+                    clearInterval(fallInterval);
+                    bomb.remove();
+                }
+            }, 20);
+            
+            // Bomb click event - EXPLOSION!
+            bomb.addEventListener('click', function() {
+                if (!gameActive) return;
+                
+                // Create explosion effect
+                createExplosion(leftPos + 25, position + 35);
+                
+                // Increase score
+                score++;
+                scoreEl.textContent = score;
+                
+                // Remove bomb
+                clearInterval(fallInterval);
+                bomb.remove();
+                
+                // Create explosion confetti
+                createExplosionConfetti();
+            });
+        }
+        
+        // Create explosion effect
+        function createExplosion(x, y) {
+            // Explosion center
+            const explosion = document.createElement('div');
+            explosion.style.position = 'absolute';
+            explosion.style.left = (x - 25) + 'px';
+            explosion.style.top = (y - 25) + 'px';
+            explosion.style.width = '50px';
+            explosion.style.height = '50px';
+            explosion.style.background = 'radial-gradient(circle, #ff0000, #ff8800, #ffff00)';
+            explosion.style.borderRadius = '50%';
+            explosion.style.animation = 'explode 0.5s forwards';
+            explosion.style.zIndex = '10';
+            gameArea.appendChild(explosion);
+            
+            // Explosion particles
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => {
+                    createExplosionParticle(x, y);
+                }, i * 50);
+            }
+            
+            // Shockwave
+            const shockwave = document.createElement('div');
+            shockwave.style.position = 'absolute';
+            shockwave.style.left = (x - 40) + 'px';
+            shockwave.style.top = (y - 40) + 'px';
+            shockwave.style.width = '80px';
+            shockwave.style.height = '80px';
+            shockwave.style.border = '2px solid #ff0000';
+            shockwave.style.borderRadius = '50%';
+            shockwave.style.animation = 'shockwave 0.8s forwards';
+            shockwave.style.opacity = '0.7';
+            gameArea.appendChild(shockwave);
+            
+            // Remove elements after animation
+            setTimeout(() => {
+                explosion.remove();
+                shockwave.remove();
+            }, 800);
+        }
+        
+        // Create explosion particles
+        function createExplosionParticle(x, y) {
+            const particle = document.createElement('div');
+            particle.style.position = 'absolute';
+            particle.style.left = x + 'px';
+            particle.style.top = y + 'px';
+            particle.style.width = '8px';
+            particle.style.height = '8px';
+            particle.style.background = ['#ff0000', '#ff8800', '#ffff00'][Math.floor(Math.random() * 3)];
+            particle.style.borderRadius = '50%';
+            
+            // Random direction for particles
+            const tx = (Math.random() - 0.5) * 100;
+            const ty = (Math.random() - 0.5) * 100;
+            particle.style.setProperty('--tx', `${tx}px`);
+            particle.style.setProperty('--ty', `${ty}px`);
+            
+            particle.style.animation = `particle-fly ${0.5 + Math.random() * 0.5}s forwards`;
+            gameArea.appendChild(particle);
+            
+            setTimeout(() => {
+                particle.remove();
+            }, 1000);
+        }
+        
+        // Special explosion confetti
+        function createExplosionConfetti() {
+            const explosionColors = ['#ff0000', '#ff8800', '#ffff00', '#ffffff', '#ff4444'];
+            for (let i = 0; i < 15; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = explosionColors[Math.floor(Math.random() * explosionColors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(confetti);
+                
+                setTimeout(() => {
+                    confetti.remove();
+                }, 5000);
+            }
+        }
+        
+        // Start the game
+        function startGame() {
+            if (gameActive) return;
+            
+            gameActive = true;
+            score = 0;
+            timeLeft = 30;
+            scoreEl.textContent = score;
+            timeEl.textContent = timeLeft;
+            
+            // Clear any existing bombs
+            gameArea.innerHTML = '';
+            
+            // Start game timer
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                timeEl.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            // Create bombs at intervals
+            bombInterval = setInterval(createBomb, 800);
+            
+            // Change button text
+            startButton.textContent = 'Game Running...';
+            startButton.disabled = true;
+        }
+        
+        // End the game
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameTimer);
+            clearInterval(bombInterval);
+            
+            // Show final score
+            const finalMessage = document.createElement('div');
+            finalMessage.style.fontSize = '1.2em';
+            finalMessage.style.fontWeight = 'bold';
+            finalMessage.style.color = '#e91e63';
+            finalMessage.style.marginTop = '10px';
+            finalMessage.textContent = `Game Over! Final Score: ${score}`;
+            gameArea.appendChild(finalMessage);
+            
+            // Reset button
+            startButton.textContent = 'Start Game';
+            startButton.disabled = false;
+            
+            // Create celebration confetti
+            for (let i = 0; i < 5; i++) {
+                setTimeout(createConfetti, i * 300);
+            }
+        }
+        
+        // Reset the game
+        function resetGame() {
+            gameActive = false;
+            clearInterval(gameTimer);
+            clearInterval(bombInterval);
+            
+            score = 0;
+            timeLeft = 30;
+            scoreEl.textContent = score;
+            timeEl.textContent = timeLeft;
+            
+            gameArea.innerHTML = '';
+            
+            startButton.textContent = 'Start Game';
+            startButton.disabled = false;
+        }
+        
+        // Event listeners
+        startButton.addEventListener('click', startGame);
+        resetButton.addEventListener('click', resetGame);
+        
+        // Create initial confetti
+        createConfetti();
+        setInterval(createConfetti, 10000);
+        
+        // Add click effect to the card
+        document.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('game-button') && 
+                !e.target.classList.contains('bomb')) {
+                createConfetti();
+            }
+        });
+    </script>
+</body>
+</html>
